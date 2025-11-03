@@ -1,0 +1,12 @@
+﻿__pycache__/
+*.pyc
+.venv/
+env/
+*.xlsx
+*.csv
+*.zip
+.vscode/
+.idea/
+.streamlit/
+data/
+outputs/

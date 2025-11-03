@@ -1,0 +1,30 @@
+# Dépendances principales
+streamlit>=1.28.0
+pandas>=2.0.0
+numpy>=1.24.0
+openpyxl>=3.1.0
+xlsxwriter>=3.1.0
+
+# Calculs scientifiques et statistiques
+scipy>=1.10.0
+scikit-learn>=1.3.0
+
+# Visualisation
+plotly>=5.15.0
+matplotlib>=3.7.0
+seaborn>=0.12.0
+
+# Utilitaires
+python-dateutil>=2.8.0
+pytz>=2023.3
+pydantic>=2.0.0
+
+# Tests
+pytest>=7.4.0
+pytest-cov>=4.1.0
+
+# Logging et monitoring
+loguru>=0.7.0
+
+# Validation de données
+cerberus>=1.3.4
