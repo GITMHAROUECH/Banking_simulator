@@ -1,0 +1,120 @@
+================================================================================
+REFACTORISATION MODULE CREDIT RISK - RÉSUMÉ
+================================================================================
+
+Date: 25 octobre 2025
+Statut: ✅ COMPLÉTÉ
+
+================================================================================
+OBJECTIFS ATTEINTS
+================================================================================
+
+✅ Séparation logique métier / UI
+✅ Architecture en couches (Domain / Service / UI)
+✅ Tests unitaires avec 91% de couverture (objectif: ≥80%)
+✅ 55 tests passent tous
+✅ Performances préservées
+✅ Visuel Streamlit identique
+✅ Documentation complète
+
+================================================================================
+STRUCTURE CRÉÉE
+================================================================================
+
+src/domain/credit_risk/
+  ├── standardized.py      (Approche standardisée RWA)
+  ├── irb.py               (Approche IRB RWA)
+  └── capital.py           (Ratios de capital)
+
+src/services/
+  └── credit_risk_service.py (Orchestration)
+
+src/ui/pages/
+  ├── credit_risk.py       (Page UI Risque de Crédit)
+  └── capital.py           (Page UI Ratios de Capital)
+
+tests/unit/credit_risk/
+  ├── test_standardized.py (17 tests)
+  ├── test_irb.py          (21 tests)
+  └── test_capital.py      (17 tests)
+
+================================================================================
+TESTS UNITAIRES
+================================================================================
+
+Total: 55 tests
+Résultat: 55 passed in 1.40s
+Couverture: 91% (183 statements, 16 missed)
+
+Détail par module:
+- src/domain/credit_risk/capital.py:        100% (38/38)
+- src/domain/credit_risk/irb.py:            89% (71/80)
+- src/domain/credit_risk/standardized.py:   89% (54/61)
+
+================================================================================
+MODIFICATIONS FICHIERS EXISTANTS
+================================================================================
+
+Banking_Simulator.py:
+  - Ajout import pages refactorisées (lignes 51-58)
+  - Modification routage pages (lignes 838-849)
+  - Flag USE_REFACTORED_CREDIT_RISK pour fallback
+
+README.md:
+  - Section architecture mise à jour
+  - Section tests mise à jour avec couverture 91%
+  - Changelog avec version 1.1.0
+
+================================================================================
+NOUVEAUX FICHIERS
+================================================================================
+
+REFACTORING_CREDIT_RISK.md    (Documentation détaillée)
+REFACTORING_SUMMARY.txt        (Ce fichier)
+
+================================================================================
+CONFORMITÉ CRR3
+================================================================================
+
+✅ Approche Standardisée:
+   - Pondérations par classe d'exposition
+   - Traitement SME (85%)
+   - Exposures en défaut (150%)
+
+✅ Approche IRB Foundation:
+   - Formule CRR3 complète
+   - Corrélations réglementaires
+   - Ajustement de maturité
+
+✅ Ratios de Capital:
+   - CET1: 4.5% + buffers
+   - Tier 1: 6.0% + buffers
+   - Total: 8.0% + buffers
+   - Leverage: 3.0%
+
+================================================================================
+COMMANDES UTILES
+================================================================================
+
+# Lancer l'application
+streamlit run Banking_Simulator.py
+
+# Exécuter les tests
+pytest tests/unit/credit_risk -v
+
+# Couverture de code
+pytest tests/unit/credit_risk --cov=src/domain/credit_risk --cov-report=term
+
+# Rapport HTML
+pytest tests/unit/credit_risk --cov=src/domain/credit_risk --cov-report=html
+
+================================================================================
+PROCHAINES ÉTAPES (OPTIONNEL)
+================================================================================
+
+1. Lint & Type checking (ruff, mypy)
+2. CI/CD avec GitHub Actions
+3. Documentation API (Sphinx)
+4. Extensions: Basel IV, SA-CCR
+
+================================================================================

@@ -1,0 +1,49 @@
+# Configuration ruff pour Banking Simulator I1-I5
+# Version: 0.5.0
+
+[lint]
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes
+    "I",   # isort
+    "N",   # pep8-naming
+    "UP",  # pyupgrade
+    "B",   # flake8-bugbear
+    "C4",  # flake8-comprehensions
+]
+
+ignore = [
+    "E501",  # line too long (handled by formatter)
+    "B008",  # do not perform function calls in argument defaults
+    "B905",  # zip without strict parameter
+]
+
+# Exclude legacy files
+exclude = [
+    ".git",
+    "__pycache__",
+    "*.pyc",
+    ".pytest_cache",
+    "htmlcov",
+    "*.egg-info",
+    "Banking_Simulator.py",  # Legacy file
+    "home_page.py",
+    "consolidation_complete.py",
+    "reconciliation_complete.py",
+    "counterparty_risk_functions.py",
+    "derivatives_integration.py",
+    "drill_down_analysis.py",
+    "tests/unit",  # Tests legacy (avant refactorisation)
+    "app/core",    # Core legacy
+    "app/io",      # IO legacy
+]
+
+[lint.per-file-ignores]
+"__init__.py" = ["F401"]  # Allow unused imports in __init__.py
+
+[format]
+quote-style = "double"
+indent-style = "space"
+line-ending = "auto"
+

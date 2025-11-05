@@ -48,6 +48,15 @@ except ImportError:
     def show_counterparty_risk_advanced():
         st.error("Module de risque de contrepartie non disponible")
 
+# Import des pages UI refactorisées (Credit Risk)
+try:
+    from src.ui.pages import show_credit_risk_advanced as show_credit_risk_refactored
+    from src.ui.pages import show_capital_ratios as show_capital_ratios_refactored
+    USE_REFACTORED_CREDIT_RISK = True
+except ImportError:
+    USE_REFACTORED_CREDIT_RISK = False
+    # Les fonctions originales seront utilisées
+
 # Configuration de la page
 st.set_page_config(
     page_title="Banking Simulation & CRR3 Reporting",
@@ -827,11 +836,17 @@ def main():
     elif page == "🔍 Réconciliation Compta-Risque":
         show_reconciliation_advanced()
     elif page == "⚠️ Risque de Crédit CRR3":
-        show_credit_risk_advanced()
+        if USE_REFACTORED_CREDIT_RISK:
+            show_credit_risk_refactored()
+        else:
+            show_credit_risk_advanced()
     elif page == "💧 Liquidité (LCR/NSFR/ALMM)":
         show_liquidity_advanced()
     elif page == "🏛️ Ratios de Capital":
-        show_capital_ratios()
+        if USE_REFACTORED_CREDIT_RISK:
+            show_capital_ratios_refactored()
+        else:
+            show_capital_ratios()
     elif page == "📈 Reporting Réglementaire":
         show_reporting_advanced()
     elif page == "📥 Export Excel Avancé":
