@@ -3,6 +3,7 @@
 **A comprehensive banking risk management application with Monte Carlo simulations, advanced risk calculations (Credit, Counterparty, Liquidity, Capital), IFRS 9 ECL, and regulatory reporting (COREP/FINREP).**
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![codecov](https://codecov.io/gh/GITMHAROUECH/Banking_simulator/branch/main/graph/badge.svg)](https://codecov.io/gh/GITMHAROUECH/Banking_simulator)
 
 This project implements a sophisticated banking simulator built on a strict 3-layer architecture (UI → Services → Domain). It features a Streamlit-based user interface, a powerful Python backend with SQLAlchemy ORM, and a robust testing suite with pytest.
 
@@ -41,12 +42,18 @@ This project implements a sophisticated banking simulator built on a strict 3-la
    source venv/bin/activate
    ```
 
-3. **Install the dependencies:**
+3. **Configure environment variables:**
+   ```bash
+   cp .env.example .env
+   # Edit .env with your configuration (DATABASE_URL, ARTIFACT_STORE, etc.)
+   ```
+
+4. **Install the dependencies:**
    ```bash
    pip install -r requirements.txt
    ```
 
-4. **Initialize the database:**
+5. **Initialize the database:**
    ```bash
    alembic upgrade head
    ```

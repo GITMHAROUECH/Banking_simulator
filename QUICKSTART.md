@@ -26,7 +26,37 @@ python3 -m venv venv
 source venv/bin/activate  # On Windows: venv\Scripts\activate
 ```
 
-### 3. Install Dependencies
+### 3. Configure Environment Variables
+
+Copy the example environment file and configure as needed:
+
+```bash
+cp .env.example .env
+```
+
+Edit `.env` with your preferred configuration. The most important variables are:
+
+**DATABASE_URL**: Database connection string
+- Development (SQLite): `sqlite:///./data/app.db` (default)
+- Production (PostgreSQL): `postgresql+psycopg://user:password@localhost:5432/banking_simulator`
+
+**ARTIFACT_STORE**: Storage backend for cached results
+- `file`: Store artifacts as files (default, recommended for local development)
+- `database`: Store artifacts as BLOBs in database (for production with PostgreSQL)
+
+**ARTIFACT_PATH**: Directory for file-based artifacts (default: `./data/artifacts`)
+
+**LOG_LEVEL**: Logging verbosity (`DEBUG`, `INFO`, `WARNING`, `ERROR`) (default: `INFO`)
+
+Example `.env` for local development:
+```bash
+DATABASE_URL=sqlite:///./data/app.db
+ARTIFACT_STORE=file
+ARTIFACT_PATH=./data/artifacts
+LOG_LEVEL=INFO
+```
+
+### 4. Install Dependencies
 
 ```bash
 pip install -r requirements.txt
@@ -34,7 +64,7 @@ pip install -r requirements.txt
 
 This will install all required packages including Streamlit, SQLAlchemy, pandas, and pytest.
 
-### 4. Initialize the Database
+### 5. Initialize the Database
 
 ```bash
 alembic upgrade head
@@ -42,7 +72,7 @@ alembic upgrade head
 
 This creates the SQLite database and applies all migrations.
 
-### 5. Run the Application
+### 6. Run the Application
 
 ```bash
 streamlit run app/main.py
@@ -104,30 +134,127 @@ Expected result: 269/273 tests passing (4 legacy failures are known and document
 
 ## Troubleshooting
 
-### Port Already in Use
+### Common Errors and Solutions
 
-If port 8501 is already in use, you can specify a different port:
+#### 1. ModuleNotFoundError: No module named 'db.models'
 
+**Error**:
+```
+ModuleNotFoundError: No module named 'db.models'
+```
+
+**Solution**: Database migrations not applied. Run:
+```bash
+alembic upgrade head
+```
+
+#### 2. Database is Locked (SQLite)
+
+**Error**:
+```
+sqlite3.OperationalError: database is locked
+```
+
+**Solution**: SQLite doesn't support concurrent writes. For multi-user or production environments, switch to PostgreSQL:
+
+1. Install PostgreSQL (see [docs/MIGRATION_POSTGRESQL.md](docs/MIGRATION_POSTGRESQL.md))
+2. Update `.env`:
+   ```bash
+   DATABASE_URL=postgresql+psycopg://user:password@localhost:5432/banking_simulator
+   ```
+3. Run migrations: `alembic upgrade head`
+
+#### 3. Alembic Revision Not Found
+
+**Error**:
+```
+alembic.util.exc.CommandError: Can't locate revision identified by 'xyz'
+```
+
+**Solution**: Database schema out of sync. Downgrade and re-upgrade:
+```bash
+alembic downgrade -1
+alembic upgrade head
+```
+
+If that doesn't work, reset database:
+```bash
+rm data/app.db  # or drop PostgreSQL database
+alembic upgrade head
+```
+
+#### 4. Import Errors (Missing Dependencies)
+
+**Error**:
+```
+ImportError: cannot import name 'X' from 'src.domain'
+```
+
+**Solution**: Dependencies not installed or virtual environment not activated:
+```bash
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+pip install -r requirements.txt
+```
+
+If still failing, try reinstalling:
+```bash
+pip install --force-reinstall -r requirements.txt
+```
+
+#### 5. Port Already in Use
+
+**Error**:
+```
+OSError: [Errno 48] Address already in use
+```
+
+**Solution**: Port 8501 already used by another Streamlit instance:
 ```bash
 streamlit run app/main.py --server.port 8502
 ```
 
-### Database Errors
-
-If you encounter database errors, try resetting the database:
-
+Or kill existing process:
 ```bash
-rm banking_app.db
-alembic upgrade head
+# Find process
+lsof -ti:8501
+
+# Kill process (replace PID)
+kill -9 <PID>
 ```
 
-### Import Errors
+#### 6. Tests Failing
 
-Make sure your virtual environment is activated and all dependencies are installed:
+**Error**:
+```
+pytest tests/ -v
+# Some tests fail unexpectedly
+```
 
+**Solution**:
+1. Ensure database is initialized: `alembic upgrade head`
+2. Check Python version: `python --version` (must be 3.11+)
+3. Run tests with verbose output to identify issue:
+   ```bash
+   pytest tests/ -v --tb=short
+   ```
+
+Expected: 269/273 tests passing (4 UI smoke tests may fail due to Streamlit mocking)
+
+#### 7. Cache Errors
+
+**Error**:
+```
+FileNotFoundError: [Errno 2] No such file or directory: './data/artifacts/...'
+```
+
+**Solution**: Artifact directory doesn't exist. Create it:
 ```bash
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-pip install -r requirements.txt
+mkdir -p data/artifacts
+```
+
+Or switch to database storage in `.env`:
+```bash
+ARTIFACT_STORE=database
 ```
 
 ## Next Steps
