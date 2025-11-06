@@ -20,6 +20,23 @@ This project implements a sophisticated banking simulator built on a strict 3-la
 - **Caching System**: DB-based caching for significant performance improvements (50-150x speedup).
 - **Data Export**: Export results to various formats (CSV, Excel, JSON, Parquet).
 
+## Recent Updates (I7a)
+
+### Pages Wire-up & UTF-8 Encoding Fix
+
+**Branch**: `feat/i7a-pages-wireup`
+
+Three Streamlit pages have been activated with full functionality:
+
+- **💧 Liquidité**: Complete liquidity analysis (LCR, NSFR, ALMM) - now functional with existing `show_liquidity_page()` implementation
+- **📈 Reporting**: Regulatory reporting dashboard with COREP/FINREP templates - now functional with existing `show_reporting_page()` implementation
+- **ℹ️ Documentation**: User guide, methodologies, and regulatory references - now functional with existing `show_documentation_page()` implementation
+
+**Fixed**: All page filenames now use proper UTF-8 emoji encoding. The sidebar previously displayed corrupted characters (e.g., "fÄ…", "fõï…") - this has been resolved. All 15 pages now display correctly with proper emojis:
+- 🚀 Pipeline, 🎲 Monte Carlo, ⚠️ RWA, 💧 Liquidité, 🏛️ Capital, 📥 Export, 🧩 Consolidation, 🔎 Analyse Portfolio, 📈 Reporting, ⚙️ Configuration, ℹ️ Documentation, ℹ️ About, 🔧 Admin, 🤝 Contrepartie, 💰 ECL
+
+**Testing**: Updated smoke tests in `tests/ui_smoke/test_pages_boot.py` to verify all pages load correctly with proper UTF-8 encoding.
+
 ## Tech Stack
 
 - **Frontend**: Streamlit
