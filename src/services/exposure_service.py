@@ -85,58 +85,94 @@ def load_exposures(run_id: str) -> pd.DataFrame:
 def snapshot_balance_sheet(run_id: str) -> tuple[pd.DataFrame, pd.DataFrame]:
     """
     Crée un snapshot du bilan (assets, liabilities) à partir des expositions.
-    
+
     Args:
         run_id: Identifiant du run
-    
+
     Returns:
         (df_assets, df_liabilities)
     """
     # Charger les expositions
     df = load_exposures(run_id)
-    
+
     # Assets : Loans, Bonds, Derivatives (MTM > 0), Equities
     asset_products = ['Loan', 'Bond', 'Equity']
     df_assets_base = df[df['product_type'].isin(asset_products)].copy()
-    
+
     # Derivatives avec MTM > 0
     df_deriv_assets = df[(df['product_type'] == 'Derivative') & (df['mtm'] > 0)].copy()
-    
+
     # Off-BS (EAD seulement)
     df_offbs = df[df['product_type'].isin(['Commitment', 'Guarantee'])].copy()
-    
+
     # Combiner
     df_assets_all = pd.concat([df_assets_base, df_deriv_assets, df_offbs], ignore_index=True)
-    
+
     # Agréger par catégorie, entity, currency
     df_assets = df_assets_all.groupby(['product_type', 'entity', 'currency']).agg({
         'notional': 'sum',
         'ead': 'sum',
         'mtm': 'sum',
     }).reset_index()
-    
+
     df_assets['item_type'] = 'asset'
     df_assets.rename(columns={'product_type': 'category', 'notional': 'amount'}, inplace=True)
-    
+
     # Liabilities : Deposits, Derivatives (MTM < 0)
     df_liab_deposits = df[df['product_type'] == 'Deposit'].copy()
     df_deriv_liab = df[(df['product_type'] == 'Derivative') & (df['mtm'] < 0)].copy()
-    
+
     df_liabilities_all = pd.concat([df_liab_deposits, df_deriv_liab], ignore_index=True)
-    
+
     df_liabilities = df_liabilities_all.groupby(['product_type', 'entity', 'currency']).agg({
         'notional': 'sum',
         'ead': 'sum',
         'mtm': 'sum',
     }).reset_index()
-    
+
     df_liabilities['item_type'] = 'liability'
     df_liabilities.rename(columns={'product_type': 'category', 'notional': 'amount'}, inplace=True)
-    
+
     # Sauvegarder en DB
     _save_balance_sheet_snapshots(run_id, df_assets, df_liabilities)
-    
+
     return (df_assets, df_liabilities)
+
+
+def list_runs(limit: int = 50) -> pd.DataFrame:
+    """
+    Liste les runs de simulation disponibles.
+
+    Args:
+        limit: Nombre maximum de runs à retourner
+
+    Returns:
+        DataFrame avec colonnes: run_id, run_date, status, total_exposures, total_notional
+    """
+    session: Session = get_session()
+
+    try:
+        stmt = select(SimulationRun).order_by(SimulationRun.run_date.desc()).limit(limit)
+        results = session.execute(stmt).scalars().all()
+
+        if not results:
+            return pd.DataFrame(columns=['run_id', 'run_date', 'status', 'total_exposures', 'total_notional'])
+
+        # Convertir en DataFrame
+        data = [
+            {
+                'run_id': r.run_id,
+                'run_date': r.run_date,
+                'status': r.status,
+                'total_exposures': r.total_exposures,
+                'total_notional': float(r.total_notional) if r.total_notional else 0.0,
+            }
+            for r in results
+        ]
+
+        return pd.DataFrame(data)
+    finally:
+        session.close()
 
 
 # ============================================================================
