@@ -122,7 +122,7 @@ def compute_rwa_standardized(positions: pd.DataFrame, config: dict) -> pd.DataFr
 
     # Filter non-retail positions (standardized approach)
     if 'is_retail' in positions_with_ead.columns:
-        non_retail = positions_with_ead[not positions_with_ead['is_retail']].copy()
+        non_retail = positions_with_ead[~positions_with_ead['is_retail']].copy()
     else:
         # If is_retail column doesn't exist, treat all as non-retail for standardized
         non_retail = positions_with_ead.copy()
