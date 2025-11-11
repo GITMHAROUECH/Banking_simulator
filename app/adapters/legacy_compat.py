@@ -315,6 +315,7 @@ from app.adapters.i11_adapters import (
     compute_saccr_from_run_advanced,
     create_corep_finrep_stubs_advanced,
     generate_exposures_advanced,
+    list_runs_advanced,
     load_exposures_advanced,
     reconcile_ledger_vs_risk_advanced,
 )

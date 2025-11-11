@@ -60,6 +60,12 @@ This project implements a sophisticated banking simulator built on a strict 3-la
 
 2. **Access the application in your browser at `http://localhost:8501`.**
 
+3. **New Workflow (Recommended):**
+   - Start at the **Home** page (`00_Home.py`) to view existing simulations or create a new one
+   - Use the **Simulation** page (`01_Simulation.py`) to generate exposure portfolios with a unique `run_id`
+   - Navigate to risk calculation pages (RWA, SA-CCR, LCR, Capital) to perform analyses on your generated portfolios
+   - See `docs/README_WORKFLOW_REFACTORING.md` for detailed workflow documentation
+
 ## Project Structure
 
 The project follows a strict 3-layer architecture:
