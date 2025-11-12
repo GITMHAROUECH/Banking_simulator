@@ -268,6 +268,55 @@ et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 **Licence** : Propriétaire  
 **Maintainers** : Équipe Banking Risk
 
+## [0.13.0] - 2025-11-05
+
+### ✨ Features - I13: Run Management Advanced
+
+- **Interface de gestion avancée des runs**
+  - Page UI "Run Management" avec 6 onglets (Liste, Détails, Comparaison, Clonage, Export/Import, Maintenance)
+  - Liste paginée avec filtres (statut, favoris, date, tags)
+  - Détails complets d'un run (métadonnées, stats, logs, validation)
+  - Gestion des favoris, tags et notes
+  
+- **Comparaison de runs**
+  - Comparer 2-4 runs avec métriques comparatives
+  - Graphiques interactifs (Plotly)
+  - Sauvegarde des comparaisons pour référence future
+  
+- **Clonage et variantes**
+  - Cloner un run avec modifications (seed, nombre d'exposures)
+  - Historique de clonage (parent_run_id)
+  
+- **Export/Import**
+  - Export complet en JSON ou Parquet
+  - Import de runs depuis fichiers JSON
+  
+- **Maintenance**
+  - Nettoyage automatique des runs anciens
+  - Recalcul des checksums SHA256
+  - Validation de l'intégrité des données
+  
+- **Base de données**
+  - 6 nouveaux champs dans `simulation_runs` (duration_seconds, checksum, is_favorite, tags, parent_run_id, notes)
+  - Table `run_logs` pour les logs d'exécution
+  - Table `run_comparisons` pour sauvegarder les comparaisons
+  
+- **Service**
+  - `run_management_service.py` avec 18 fonctions
+  - Gestion complète du cycle de vie des runs
+  
+- **Tests**
+  - 18 tests unitaires (100% passing)
+  - Couverture complète du service
+
+### 📊 Statistiques
+
+- **Tests** : 287/291 passing (98.6%)
+- **Nouvelles fonctionnalités** : 18 fonctions + 1 page UI
+- **Migration** : 794da3a2d21b (I13)
+
+---
+
 ## [0.12.1] - 2025-11-04
 
 ### 🐞 Corrigé
