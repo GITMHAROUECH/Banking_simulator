@@ -6,7 +6,7 @@ import hashlib
 import json
 import uuid
 from datetime import datetime, timedelta
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 import pandas as pd
 from sqlalchemy import and_, desc, func
@@ -14,19 +14,17 @@ from sqlalchemy.orm import Session
 
 from db.base import get_session
 from db.models import Exposure, RunComparison, RunLog, SimulationRun
-from src.services.exposure_service import generate_exposures
-from src.services.persistence_service import save_dataframe
 
 
 def list_runs(
-    status_filter: Optional[str] = None,
+    status_filter: str | None = None,
     favorites_only: bool = False,
-    tags_filter: Optional[List[str]] = None,
-    date_from: Optional[datetime] = None,
-    date_to: Optional[datetime] = None,
+    tags_filter: list[str] | None = None,
+    date_from: datetime | None = None,
+    date_to: datetime | None = None,
     limit: int = 20,
     offset: int = 0,
-) -> Tuple[List[Dict[str, Any]], int]:
+) -> tuple[list[dict[str, Any]], int]:
     """
     Liste les runs avec filtres et pagination.
     
@@ -43,33 +41,33 @@ def list_runs(
         Tuple (liste des runs, total count)
     """
     session: Session = get_session()
-    
+
     query = session.query(SimulationRun)
-    
+
     # Filtres
     if status_filter:
         query = query.filter(SimulationRun.status == status_filter)
-    
+
     if favorites_only:
         query = query.filter(SimulationRun.is_favorite == True)
-    
+
     if tags_filter:
         # Tags stockés en JSON, filtrer si au moins un tag matche
         for tag in tags_filter:
             query = query.filter(SimulationRun.tags.like(f'%{tag}%'))
-    
+
     if date_from:
         query = query.filter(SimulationRun.run_date >= date_from)
-    
+
     if date_to:
         query = query.filter(SimulationRun.run_date <= date_to)
-    
+
     # Count total
     total_count = query.count()
-    
+
     # Pagination et tri
     runs = query.order_by(desc(SimulationRun.run_date)).limit(limit).offset(offset).all()
-    
+
     # Convertir en dict
     runs_list = []
     for run in runs:
@@ -86,11 +84,11 @@ def list_runs(
             'parent_run_id': run.parent_run_id,
             'checksum': run.checksum,
         })
-    
+
     return runs_list, total_count
 
 
-def get_run_details(run_id: str) -> Optional[Dict[str, Any]]:
+def get_run_details(run_id: str) -> dict[str, Any] | None:
     """
     Récupère les détails complets d'un run.
     
@@ -101,11 +99,11 @@ def get_run_details(run_id: str) -> Optional[Dict[str, Any]]:
         Dictionnaire avec métadonnées, stats, logs
     """
     session: Session = get_session()
-    
+
     run = session.query(SimulationRun).filter_by(run_id=run_id).first()
     if not run:
         return None
-    
+
     # Stats des exposures
     exposure_stats = session.query(
         Exposure.product_type,
@@ -113,7 +111,7 @@ def get_run_details(run_id: str) -> Optional[Dict[str, Any]]:
         func.sum(Exposure.ead).label('total_ead'),
         func.sum(Exposure.notional).label('total_notional'),
     ).filter_by(run_id=run_id).group_by(Exposure.product_type).all()
-    
+
     stats_by_product = []
     for stat in exposure_stats:
         stats_by_product.append({
@@ -122,7 +120,7 @@ def get_run_details(run_id: str) -> Optional[Dict[str, Any]]:
             'total_ead': float(stat.total_ead) if stat.total_ead else 0,
             'total_notional': float(stat.total_notional) if stat.total_notional else 0,
         })
-    
+
     # Logs récents
     logs = session.query(RunLog).filter_by(run_id=run_id).order_by(desc(RunLog.timestamp)).limit(50).all()
     logs_list = []
@@ -132,11 +130,11 @@ def get_run_details(run_id: str) -> Optional[Dict[str, Any]]:
             'level': log.level,
             'message': log.message,
         })
-    
+
     # Config
     config = json.loads(run.config_json) if run.config_json else {}
     tags = json.loads(run.tags) if run.tags else []
-    
+
     return {
         'run_id': run.run_id,
         'run_date': run.run_date,
@@ -166,20 +164,20 @@ def delete_run(run_id: str) -> bool:
         True si suppression réussie
     """
     session: Session = get_session()
-    
+
     try:
         # Supprimer les exposures
         session.query(Exposure).filter_by(run_id=run_id).delete()
-        
+
         # Supprimer les logs
         session.query(RunLog).filter_by(run_id=run_id).delete()
-        
+
         # Supprimer le run
         session.query(SimulationRun).filter_by(run_id=run_id).delete()
-        
+
         session.commit()
         return True
-    
+
     except Exception as e:
         session.rollback()
         raise e
@@ -196,18 +194,18 @@ def toggle_favorite(run_id: str) -> bool:
         Nouveau statut favori
     """
     session: Session = get_session()
-    
+
     run = session.query(SimulationRun).filter_by(run_id=run_id).first()
     if not run:
         raise ValueError(f"Run {run_id} not found")
-    
+
     run.is_favorite = not run.is_favorite
     session.commit()
-    
+
     return run.is_favorite
 
 
-def update_tags(run_id: str, tags: List[str]) -> None:
+def update_tags(run_id: str, tags: list[str]) -> None:
     """
     Met à jour les tags d'un run.
     
@@ -216,11 +214,11 @@ def update_tags(run_id: str, tags: List[str]) -> None:
         tags: Liste des tags
     """
     session: Session = get_session()
-    
+
     run = session.query(SimulationRun).filter_by(run_id=run_id).first()
     if not run:
         raise ValueError(f"Run {run_id} not found")
-    
+
     run.tags = json.dumps(tags)
     session.commit()
 
@@ -234,18 +232,18 @@ def update_notes(run_id: str, notes: str) -> None:
         notes: Texte des notes
     """
     session: Session = get_session()
-    
+
     run = session.query(SimulationRun).filter_by(run_id=run_id).first()
     if not run:
         raise ValueError(f"Run {run_id} not found")
-    
+
     run.notes = notes
     session.commit()
 
 
 def clone_run(
     source_run_id: str,
-    modifications: Optional[Dict[str, Any]] = None,
+    modifications: dict[str, Any] | None = None,
 ) -> str:
     """
     Clone un run existant avec modifications optionnelles.
@@ -258,22 +256,22 @@ def clone_run(
         ID du nouveau run créé
     """
     session: Session = get_session()
-    
+
     # Récupérer le run source
     source_run = session.query(SimulationRun).filter_by(run_id=source_run_id).first()
     if not source_run:
         raise ValueError(f"Source run {source_run_id} not found")
-    
+
     # Config source
     config = json.loads(source_run.config_json) if source_run.config_json else {}
-    
+
     # Appliquer modifications
     if modifications:
         config.update(modifications)
-    
+
     # Générer nouveau run_id
     new_run_id = f"run_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{uuid.uuid4().hex[:6]}"
-    
+
     # Créer nouveau run
     new_run = SimulationRun(
         run_id=new_run_id,
@@ -284,10 +282,10 @@ def clone_run(
         parent_run_id=source_run_id,
         tags=source_run.tags,
     )
-    
+
     session.add(new_run)
     session.commit()
-    
+
     # Log
     log = RunLog(
         id=str(uuid.uuid4()),
@@ -298,7 +296,7 @@ def clone_run(
     )
     session.add(log)
     session.commit()
-    
+
     return new_run_id
 
 
@@ -313,28 +311,28 @@ def compute_checksum(run_id: str) -> str:
         Checksum SHA256
     """
     session: Session = get_session()
-    
+
     # Récupérer toutes les exposures
     exposures = session.query(Exposure).filter_by(run_id=run_id).order_by(Exposure.id).all()
-    
+
     # Construire une chaîne représentative
     data_str = ""
     for exp in exposures:
         data_str += f"{exp.id}|{exp.product_type}|{exp.ead}|{exp.pd}|{exp.lgd}|"
-    
+
     # Calculer SHA256
     checksum = hashlib.sha256(data_str.encode()).hexdigest()
-    
+
     # Mettre à jour le run
     run = session.query(SimulationRun).filter_by(run_id=run_id).first()
     if run:
         run.checksum = checksum
         session.commit()
-    
+
     return checksum
 
 
-def validate_run(run_id: str) -> Dict[str, Any]:
+def validate_run(run_id: str) -> dict[str, Any]:
     """
     Valide l'intégrité d'un run.
     
@@ -345,30 +343,30 @@ def validate_run(run_id: str) -> Dict[str, Any]:
         Dictionnaire avec résultats de validation
     """
     session: Session = get_session()
-    
+
     run = session.query(SimulationRun).filter_by(run_id=run_id).first()
     if not run:
         return {'valid': False, 'error': 'Run not found'}
-    
+
     # Vérifier nombre d'exposures
     actual_count = session.query(func.count(Exposure.id)).filter_by(run_id=run_id).scalar()
     expected_count = run.total_exposures
-    
+
     count_valid = actual_count == expected_count if expected_count else True
-    
+
     # Vérifier checksum
     current_checksum = compute_checksum(run_id)
     checksum_valid = current_checksum == run.checksum if run.checksum else True
-    
+
     # Vérifier données nulles
     null_ead_count = session.query(func.count(Exposure.id)).filter(
         and_(Exposure.run_id == run_id, Exposure.ead == None)
     ).scalar()
-    
+
     null_pd_count = session.query(func.count(Exposure.id)).filter(
         and_(Exposure.run_id == run_id, Exposure.pd == None)
     ).scalar()
-    
+
     return {
         'valid': count_valid and checksum_valid and null_ead_count == 0,
         'run_id': run_id,
@@ -386,7 +384,7 @@ def validate_run(run_id: str) -> Dict[str, Any]:
 
 
 
-def compare_runs(run_ids: List[str]) -> Dict[str, Any]:
+def compare_runs(run_ids: list[str]) -> dict[str, Any]:
     """
     Compare plusieurs runs et retourne les métriques comparatives.
     
@@ -398,27 +396,27 @@ def compare_runs(run_ids: List[str]) -> Dict[str, Any]:
     """
     if len(run_ids) < 2 or len(run_ids) > 4:
         raise ValueError("Can only compare 2-4 runs")
-    
+
     session: Session = get_session()
-    
+
     comparison = {
         'run_ids': run_ids,
         'runs_metadata': [],
         'metrics_comparison': {},
         'exposures_comparison': {},
     }
-    
+
     # Récupérer métadonnées de chaque run
     for run_id in run_ids:
         run = session.query(SimulationRun).filter_by(run_id=run_id).first()
         if not run:
             continue
-        
+
         # Stats exposures
         total_ead = session.query(func.sum(Exposure.ead)).filter_by(run_id=run_id).scalar() or 0
         avg_pd = session.query(func.avg(Exposure.pd)).filter_by(run_id=run_id).scalar() or 0
         avg_lgd = session.query(func.avg(Exposure.lgd)).filter_by(run_id=run_id).scalar() or 0
-        
+
         comparison['runs_metadata'].append({
             'run_id': run_id,
             'run_date': run.run_date,
@@ -429,7 +427,7 @@ def compare_runs(run_ids: List[str]) -> Dict[str, Any]:
             'avg_pd': float(avg_pd),
             'avg_lgd': float(avg_lgd),
         })
-    
+
     # Comparaison par produit
     for run_id in run_ids:
         product_stats = session.query(
@@ -437,18 +435,18 @@ def compare_runs(run_ids: List[str]) -> Dict[str, Any]:
             func.count(Exposure.id).label('count'),
             func.sum(Exposure.ead).label('total_ead'),
         ).filter_by(run_id=run_id).group_by(Exposure.product_type).all()
-        
+
         comparison['exposures_comparison'][run_id] = {}
         for stat in product_stats:
             comparison['exposures_comparison'][run_id][stat.product_type] = {
                 'count': stat.count,
                 'total_ead': float(stat.total_ead) if stat.total_ead else 0,
             }
-    
+
     return comparison
 
 
-def save_comparison(name: str, run_ids: List[str], notes: Optional[str] = None) -> str:
+def save_comparison(name: str, run_ids: list[str], notes: str | None = None) -> str:
     """
     Sauvegarde une comparaison pour référence future.
     
@@ -461,9 +459,9 @@ def save_comparison(name: str, run_ids: List[str], notes: Optional[str] = None) 
         ID de la comparaison
     """
     session: Session = get_session()
-    
+
     comparison_id = str(uuid.uuid4())
-    
+
     comparison = RunComparison(
         id=comparison_id,
         name=name,
@@ -471,14 +469,14 @@ def save_comparison(name: str, run_ids: List[str], notes: Optional[str] = None) 
         created_at=datetime.utcnow(),
         notes=notes,
     )
-    
+
     session.add(comparison)
     session.commit()
-    
+
     return comparison_id
 
 
-def list_comparisons() -> List[Dict[str, Any]]:
+def list_comparisons() -> list[dict[str, Any]]:
     """
     Liste toutes les comparaisons sauvegardées.
     
@@ -486,9 +484,9 @@ def list_comparisons() -> List[Dict[str, Any]]:
         Liste des comparaisons
     """
     session: Session = get_session()
-    
+
     comparisons = session.query(RunComparison).order_by(desc(RunComparison.created_at)).all()
-    
+
     result = []
     for comp in comparisons:
         result.append({
@@ -498,11 +496,11 @@ def list_comparisons() -> List[Dict[str, Any]]:
             'created_at': comp.created_at,
             'notes': comp.notes,
         })
-    
+
     return result
 
 
-def export_run(run_id: str, format: str = 'json') -> Tuple[bytes, str]:
+def export_run(run_id: str, format: str = 'json') -> tuple[bytes, str]:
     """
     Exporte un run complet.
     
@@ -514,15 +512,15 @@ def export_run(run_id: str, format: str = 'json') -> Tuple[bytes, str]:
         Tuple (données binaires, nom de fichier)
     """
     session: Session = get_session()
-    
+
     # Récupérer métadonnées
     run = session.query(SimulationRun).filter_by(run_id=run_id).first()
     if not run:
         raise ValueError(f"Run {run_id} not found")
-    
+
     # Récupérer exposures
     exposures = session.query(Exposure).filter_by(run_id=run_id).all()
-    
+
     if format == 'json':
         # Export JSON
         data = {
@@ -537,7 +535,7 @@ def export_run(run_id: str, format: str = 'json') -> Tuple[bytes, str]:
             },
             'exposures': []
         }
-        
+
         for exp in exposures:
             data['exposures'].append({
                 'id': exp.id,
@@ -550,22 +548,22 @@ def export_run(run_id: str, format: str = 'json') -> Tuple[bytes, str]:
                 'lgd': float(exp.lgd) if exp.lgd else None,
                 'entity': exp.entity,
             })
-        
+
         json_bytes = json.dumps(data, indent=2).encode('utf-8')
         filename = f"{run_id}_export.json"
         return json_bytes, filename
-    
+
     elif format == 'parquet':
         # Export Parquet (exposures seulement)
         df = pd.read_sql(
             session.query(Exposure).filter_by(run_id=run_id).statement,
             session.bind
         )
-        
+
         parquet_bytes = df.to_parquet(index=False)
         filename = f"{run_id}_exposures.parquet"
         return parquet_bytes, filename
-    
+
     else:
         raise ValueError(f"Unsupported format: {format}")
 
@@ -581,17 +579,17 @@ def import_run(file_path: str) -> str:
         ID du run importé
     """
     session: Session = get_session()
-    
+
     # Lire le fichier
-    with open(file_path, 'r') as f:
+    with open(file_path) as f:
         data = json.load(f)
-    
+
     metadata = data['metadata']
     exposures_data = data['exposures']
-    
+
     # Créer nouveau run
     new_run_id = f"run_imported_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
-    
+
     new_run = SimulationRun(
         run_id=new_run_id,
         params_hash=hashlib.sha256(json.dumps(metadata['config'], sort_keys=True).encode()).hexdigest(),
@@ -602,10 +600,10 @@ def import_run(file_path: str) -> str:
         config_json=json.dumps(metadata['config']),
         checksum=metadata.get('checksum'),
     )
-    
+
     session.add(new_run)
     session.commit()
-    
+
     # Créer exposures
     for exp_data in exposures_data:
         exposure = Exposure(
@@ -621,9 +619,9 @@ def import_run(file_path: str) -> str:
             entity=exp_data['entity'],
         )
         session.add(exposure)
-    
+
     session.commit()
-    
+
     # Log
     log = RunLog(
         id=str(uuid.uuid4()),
@@ -634,11 +632,11 @@ def import_run(file_path: str) -> str:
     )
     session.add(log)
     session.commit()
-    
+
     return new_run_id
 
 
-def cleanup_old_runs(days_threshold: int = 30, dry_run: bool = True) -> Dict[str, Any]:
+def cleanup_old_runs(days_threshold: int = 30, dry_run: bool = True) -> dict[str, Any]:
     """
     Nettoie les runs anciens non favoris.
     
@@ -650,9 +648,9 @@ def cleanup_old_runs(days_threshold: int = 30, dry_run: bool = True) -> Dict[str
         Statistiques de nettoyage
     """
     session: Session = get_session()
-    
+
     cutoff_date = datetime.utcnow() - timedelta(days=days_threshold)
-    
+
     # Trouver les runs à supprimer
     runs_to_delete = session.query(SimulationRun).filter(
         and_(
@@ -660,7 +658,7 @@ def cleanup_old_runs(days_threshold: int = 30, dry_run: bool = True) -> Dict[str
             SimulationRun.is_favorite == False,
         )
     ).all()
-    
+
     stats = {
         'dry_run': dry_run,
         'cutoff_date': cutoff_date,
@@ -669,17 +667,17 @@ def cleanup_old_runs(days_threshold: int = 30, dry_run: bool = True) -> Dict[str
         'exposures_deleted': 0,
         'run_ids': [run.run_id for run in runs_to_delete],
     }
-    
+
     if not dry_run:
         for run in runs_to_delete:
             # Compter exposures
             exp_count = session.query(func.count(Exposure.id)).filter_by(run_id=run.run_id).scalar()
             stats['exposures_deleted'] += exp_count
-            
+
             # Supprimer
             delete_run(run.run_id)
             stats['runs_deleted'] += 1
-    
+
     return stats
 
 
@@ -693,7 +691,7 @@ def add_log(run_id: str, level: str, message: str) -> None:
         message: Message du log
     """
     session: Session = get_session()
-    
+
     log = RunLog(
         id=str(uuid.uuid4()),
         run_id=run_id,
@@ -701,7 +699,7 @@ def add_log(run_id: str, level: str, message: str) -> None:
         level=level,
         message=message,
     )
-    
+
     session.add(log)
     session.commit()
 
