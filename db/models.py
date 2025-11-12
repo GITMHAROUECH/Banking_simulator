@@ -72,6 +72,7 @@ class Artifact(Base):
 class SimulationRun(Base):
     """
     Métadonnées des runs de simulation (I11).
+    I13: Ajout champs gestion avancée (duration, checksum, favorite, tags, parent, notes).
     """
     __tablename__ = "simulation_runs"
 
@@ -83,6 +84,14 @@ class SimulationRun(Base):
     total_notional = Column(Numeric(20, 2), nullable=True)
     config_json = Column(Text, nullable=True)  # Snapshot config
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    
+    # I13: Nouveaux champs
+    duration_seconds = Column(Numeric(10, 2), nullable=True)
+    checksum = Column(String(64), nullable=True)
+    is_favorite = Column(Boolean, nullable=False, default=False)
+    tags = Column(Text, nullable=True)  # JSON array
+    parent_run_id = Column(String(36), nullable=True)
+    notes = Column(Text, nullable=True)
 
 
 class Exposure(Base):
@@ -192,4 +201,44 @@ class ScenarioOverlay(Base):
     discount_rate_value = Column(Numeric(10, 6), nullable=True)  # Taux si fixe (%)
     horizon_months = Column(Integer, nullable=True, default=12)  # Horizon lifetime (mois)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+
+
+
+# ============================================================================
+# I13: Nouveaux modèles pour gestion avancée des runs
+# ============================================================================
+
+class RunLog(Base):
+    """
+    Logs d'exécution des runs (I13).
+    """
+    __tablename__ = "run_logs"
+
+    id = Column(String(36), primary_key=True)  # UUID
+    run_id = Column(String(36), nullable=False, index=True)
+    timestamp = Column(DateTime, default=datetime.utcnow, nullable=False)
+    level = Column(String(10), nullable=False)  # INFO, WARNING, ERROR
+    message = Column(Text, nullable=False)
+
+    __table_args__ = (
+        Index("ix_run_logs_run_id", "run_id"),
+    )
+
+
+class RunComparison(Base):
+    """
+    Comparaisons sauvegardées entre runs (I13).
+    """
+    __tablename__ = "run_comparisons"
+
+    id = Column(String(36), primary_key=True)  # UUID
+    name = Column(String(100), nullable=False)
+    run_ids = Column(Text, nullable=False)  # JSON array of run_ids
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    notes = Column(Text, nullable=True)
+
+    __table_args__ = (
+        Index("ix_run_comparisons_created_at", "created_at"),
+    )
 

@@ -48,3 +48,13 @@ def get_db():  # type: ignore[no-untyped-def]
     finally:
         db.close()
 
+
+
+
+def get_session():
+    """
+    Retourne une session DB pour utilisation directe.
+    Usage: session = get_session()
+    """
+    return SessionLocal()
+

@@ -6,7 +6,7 @@ from typing import Any
 
 import pandas as pd
 
-from src.services.exposure_service import generate_exposures, load_exposures, list_runs
+from src.services.exposure_service import generate_exposures, load_exposures
 from src.services.reconciliation_service import (
     get_reconciliation_summary,
     reconcile_ledger_vs_risk,
@@ -42,24 +42,11 @@ def generate_exposures_advanced(
 def load_exposures_advanced(run_id: str) -> pd.DataFrame:
     """
     Charge les exposures pour un run_id (UI adapter).
-
+    
     Returns:
         DataFrame
     """
     return load_exposures(run_id)
-
-
-def list_runs_advanced(limit: int = 50) -> pd.DataFrame:
-    """
-    Liste les runs de simulation disponibles (UI adapter).
-
-    Args:
-        limit: Nombre maximum de runs à retourner
-
-    Returns:
-        DataFrame avec colonnes: run_id, run_date, status, total_exposures, total_notional
-    """
-    return list_runs(limit)
 
 
 # ============================================================================
